@@ -113,12 +113,14 @@ class AuthProvider extends ChangeNotifier {
     // This method attempts to refresh the access token using the refresh token stored in secure storage.
     final refreshToken = await _storage.read(key: _refreshKey);
     if (refreshToken == null) {
+      debugPrint('No refresh token found in storage.');
       _accessToken = null;
       notifyListeners();
       return false;
     }
 
     try {
+      debugPrint('Attempting to refresh access token...');
       final response = await http.post(
         Uri.parse(_tokenUrl),
         body: {
@@ -130,13 +132,17 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
+        debugPrint('Refresh token successful!');
         await _saveTokenFromResponse(response.body);
         return true;
       } else {
+        debugPrint('Refresh token failed with status: ${response.statusCode}');
+        debugPrint('Response body: ${response.body}');
         await logout();
         return false;
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Refresh token threw an exception: $e');
       await logout();
       return false;
     }

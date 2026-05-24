@@ -34,53 +34,113 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final titles = ['Home', 'Search'];
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text(titles[_currentIndex]),
+        title: Text(
+          titles[_currentIndex],
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+            color: Colors.white,
+            fontSize: 22,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 10,
+        shadowColor: const Color(0xFF00BABC).withOpacity(0.3),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00BABC), Color(0xFF00585A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () => context.read<AuthProvider>().logout(),
-            icon: const Icon(Icons.logout),
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              tooltip: 'Logout',
+              onPressed: () => context.read<AuthProvider>().logout(),
+              icon: const Icon(
+                Icons.power_settings_new_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
           ),
         ],
       ),
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _buildUsersList(userProvider, showSearchState: false),
-          _buildSearchTab(userProvider),
+          _buildUsersList(userProvider, showSearchState: false, isDark: isDark),
+          _buildSearchTab(userProvider, isDark: isDark),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index == 2) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ProfileScreen(showSelectedUser: false),
-              ),
-            );
-            return;
-          }
-          setState(() => _currentIndex = index);
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          elevation: 0,
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          selectedItemColor: const Color(0xFF00BABC),
+          unselectedItemColor: isDark ? Colors.white38 : Colors.black38,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          onTap: (index) {
+            if (index == 2) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(showSelectedUser: false),
+                ),
+              );
+              return;
+            }
+            setState(() => _currentIndex = index);
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.search_rounded),
+              label: 'Search',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchTab(UserProvider userProvider) {
+  Widget _buildSearchTab(UserProvider userProvider, {required bool isDark}) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: TextField(
             controller: _searchController,
             onChanged: (value) {
@@ -89,23 +149,47 @@ class _HomeScreenState extends State<HomeScreen> {
               context.read<UserProvider>().searchUsers(text);
             },
             decoration: InputDecoration(
-              hintText: 'Search by login',
-              prefixIcon: const Icon(Icons.search),
+              hintText: 'Search by login (e.g. abouzanb)',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.white38 : Colors.black38,
+              ),
+              prefixIcon: const Icon(Icons.search, color: Color(0xFF00BABC)),
               suffixIcon: _query.isEmpty
                   ? null
                   : IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(Icons.cancel, color: Colors.grey),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _query = '');
                         context.read<UserProvider>().clearSearch();
                       },
                     ),
-              border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.04),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(
+                  color: Color(0xFF00BABC),
+                  width: 1.5,
+                ),
+              ),
             ),
           ),
         ),
-        Expanded(child: _buildUsersList(userProvider, showSearchState: true)),
+        Expanded(
+          child: _buildUsersList(
+            userProvider,
+            showSearchState: true,
+            isDark: isDark,
+          ),
+        ),
       ],
     );
   }
@@ -113,6 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildUsersList(
     UserProvider userProvider, {
     required bool showSearchState,
+    required bool isDark,
   }) {
     final isSearching = showSearchState && _query.isNotEmpty;
     final isLoading = isSearching
@@ -126,76 +211,191 @@ class _HomeScreenState extends State<HomeScreen> {
         : userProvider.campusUsers;
 
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00BABC)),
+        ),
+      );
     }
 
     if (error != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(error),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                if (isSearching) {
-                  context.read<UserProvider>().searchUsers(_query);
-                } else {
-                  context.read<UserProvider>().loadCampusUsers();
-                }
-              },
-              child: const Text('Retry'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        error,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (isSearching) {
+                    context.read<UserProvider>().searchUsers(_query);
+                  } else {
+                    context.read<UserProvider>().loadCampusUsers();
+                  }
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00BABC),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (users.isEmpty) {
       return Center(
-        child: Text(
-          isSearching ? 'No users match your search.' : 'No users found.',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSearching
+                  ? Icons.person_search_rounded
+                  : Icons.people_outline_rounded,
+              size: 64,
+              color: isDark ? Colors.white24 : Colors.black26,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isSearching ? 'No peers match "$_query"' : 'No peers found.',
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.white54 : Colors.black54,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       itemCount: users.length,
       itemBuilder: (itemContext, index) {
         final user = users[index];
-        return ListTile(
-          leading: Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black12,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: user.imageUrl == null
-                ? const Icon(Icons.person)
-                : Padding(
-                    padding: const EdgeInsets.all(1),
-                    child: Image.network(
-                      user.imageUrl!,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.person);
-                      },
-                    ),
-                  ),
-          ),
-          title: Text(user.login),
-          subtitle: Text(user.displayName),
-          onTap: () async {
-            await itemContext.read<UserProvider>().loadUserProfile(user.login);
-            if (!itemContext.mounted) return;
-            Navigator.of(itemContext).push(
-              MaterialPageRoute(
-                builder: (_) => const ProfileScreen(showSelectedUser: true),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            );
-          },
+            ],
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                itemContext.read<UserProvider>().loadUserProfile(user.login);
+                Navigator.of(itemContext).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileScreen(showSelectedUser: true),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 26,
+                      backgroundColor: isDark
+                          ? Colors.white12
+                          : Colors.grey.shade200,
+                      backgroundImage: user.imageUrl != null
+                          ? NetworkImage(user.imageUrl!)
+                          : null,
+                      onBackgroundImageError: (_, __) {},
+                      child: user.imageUrl == null
+                          ? Icon(
+                              Icons.person,
+                              color: isDark ? Colors.white38 : Colors.grey,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.login,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            user.displayName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white60 : Colors.black54,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDark ? Colors.white38 : Colors.black26,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
