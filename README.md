@@ -14,13 +14,6 @@ A beautifully crafted Flutter application that acts as a companion for students 
 - **User Search**: Quickly find and view public profiles of other 42 students.
 - **Project Tracking**: See detailed information about user projects, including completed and failed ones.
 
-##  Screenshots
-
-*(Replace these with actual screenshots of your application)*
-| Login | Home | Profile |
-| :---: | :---: | :---: |
-| <img src="assets/logo/icon.png" width="200"/> | <img src="assets/logo/icon.png" width="200"/> | <img src="assets/logo/icon.png" width="200"/> |
-
 ##  Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine.
